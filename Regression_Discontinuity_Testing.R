@@ -5,7 +5,7 @@
 
 ## load in dataset & Packages
 pacman::p_load(tidyverse, haven, stargazer, rdd, ivreg, ggplot2, magrittr, ggpubr)
-p2 <- read_dta("Coursework/metrics/Year 2/587/CODE/DATA/RD_Manip_Econ587.dta")
+p2 <- read_dta("DATA/RD_Manip_Econ587.dta")
 
 
 ##### Part A #####
