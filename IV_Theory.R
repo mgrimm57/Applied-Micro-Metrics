@@ -1,18 +1,18 @@
-### Measurement Error in regressors fixerd by using Instrumental Variables
+### Measurement Error in regressors fixed by using Instrumental Variables
 
-# generate variables
+# generate variables for simulation
 x = rnorm(10000,10,2)
 epsilon = rnorm(10000, 0, 10^{1/2})
 x_1 = c()
 x_2 = c()
 y = c()
 for (i in 1:10000) {
-  x_1[i] = x[i] + rnorm(1,0,1)
-  x_2[i] = x[i] + rnorm(1,0,2)
+  x_1[i] = x[i] + rnorm(1,0,1) # instrument
+  x_2[i] = x[i] + rnorm(1,0,2) # weaker instrument
   y[i] = 3 + 1*x[i] + epsilon[i]
 }
 
-# function for regressions
+# function for regressions to easily extract important variables after every simulation
 regression <- function(y,x){
   beta_0 = c()
   beta_1 = c()
@@ -39,7 +39,7 @@ regression(y,x)
 regression(y, x_1)
 regression(y, x_2)
 
-# 2SLS regression
+# Two staged least squares regression 
 SLS <- function(y,iv,iv2){
   beta_0 = c()
   beta_1 = c()
@@ -75,8 +75,7 @@ SLS <- function(y,iv,iv2){
   return(results)
 }
 
-# 2SLS for h
-# 2SLS regression
+# better function for two staged least squares to get more relevant statistics
 SLSH <- function(){
   beta_0 = c()
   beta_1 = c()
@@ -120,7 +119,6 @@ SLSH <- function(){
   se_g_1 = round(mean(se_gamma_1),4)
   e_se_b0 = round(sd(beta_0),4)
   e_se_b1 = round(sd(beta_1),4)
-  # for part g
   empirical_se_b0 = sd(beta_0)
   empirical_se_b1 = sd(beta_1)
   results = c(b_0,b_1,se_0, se_1, g_0,g_1,se_g_0, se_g_1, e_se_b0, e_se_b1)
@@ -129,8 +127,11 @@ SLSH <- function(){
 
 SLSH
 SLS(y, x_2,x_1)
-# part i
+
+
 library("ivreg")
+
+# simulation!
 beta_0 = c()
 beta_1 = c()
 se_beta_0 = c()
@@ -153,6 +154,8 @@ for (k in 1:1000){
   se_beta_0[k] = ivs[["coefficients"]][1,2]
   se_beta_1[k] = ivs[["coefficients"]][2,2]
 }
+
+# results for using x_1 vs x_2
 avg_se_beta_0 = mean(se_beta_0)
 avg_se_beta_1 = mean(se_beta_1)
 e_se_beta_0 = sd(beta_0)
