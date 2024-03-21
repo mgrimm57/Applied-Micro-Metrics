@@ -75,7 +75,6 @@ only_wash =balanced_df |> filter(state == 'Wash') |>
 # plotting the weights
 plot_weights(only_wash)
 
-## Part E ##
 
 # Generate synthetic weights (Just California)
 only_cali = balanced_df |> filter(state == 'Calif' | city == 'Seattle') |> 
