@@ -2,12 +2,12 @@
 ### Goal: find the effect of the new policy (ranking voting system) using Synthetic Control
 
 # Import Data & Packages
-pacman::p_load(tidyverse, magrittr, estimatr, fixest, plm, systemfit, tidysynth)
-df <- read_dta("Coursework/metrics/Year 2/587/CODE/DATA/GriffithNoonen2022_Econ587.dta")
+pacman::p_load(tidyverse, magrittr, estimatr, fixest, plm, systemfit, tidysynth, haven)
+df <- read_dta("DATA/GriffithNoonen2022_Econ587.dta")
 
-# simulate collapse command in r
+# Cleaning up data
 balanced_df = df |> 
-  mutate(cycle = factor(df$cycle, labels = 1:10), # Renumber cycles 1 through 10
+  mutate(cycle = factor(df$cycle, labels = 1:10), 
          city_cycle = as.factor(city):as.factor(cycle)) |> # Remake this variable using new numbering
   group_by(city_cycle) |> 
   summarise(candidates_ballot = mean(candidates_ballot, na.rm = T),
@@ -30,18 +30,17 @@ balanced_df = df |>
   mutate(city = stringr::word(city_cycle, sep = ":"),
          cycle = as.numeric(stringr::word(city_cycle, start = -1, sep = ":")))
 
-## Part A ##
+## Standard diff in diff regression with various controls
 balanced_dd = lm_robust(candidates_ballot ~ post*treatment + At_Large*Special, data = balanced_df, clusters = city_cycle)
 summary(balanced_dd)
 
-## Part B ##
+## Balanced two way fixed effects regression
 balanced_twfe =  feols(candidates_ballot ~ post*treatment | as.factor(city) + 
                          as.factor(cycle) + At_Large*Special,data = balanced_df, cluster = "city_cycle")
 summary(balanced_twfe)
 
-## Part C ##
 
-# Generate synthetic object (all possible cities)
+## Generate synthetic object (all possible cities)
 all_synth = balanced_df |> synthetic_control(outcome = candidates_ballot,
                                              unit = city,
                                              time = cycle,
@@ -57,20 +56,15 @@ all_synth = balanced_df |> synthetic_control(outcome = candidates_ballot,
                      pop = pop,
                      pop100k = pop100k) |> generate_weights() |> generate_control() 
 
-# plotting the weights
+# plotting the weights to see how the synthetic control is looking
 plot_weights(all_synth)
 
 
-## Part D ##
-
 # Generate synthetic weights (Just Washington)
-only_wash =balanced_df |> filter(state == 'Wash') |> synthetic_control(outcome = candidates_ballot,
-                                                                       unit = city,
-                                                                       time = cycle,
-                                                                       i_unit = 'Seattle',
-                                                                       i_time = 8) |> 
-  
-  generate_predictor(At_Large = At_Large, # I had to remove special because there's no variation in it for washington
+only_wash =balanced_df |> filter(state == 'Wash') |> 
+  synthetic_control(outcome = candidates_ballot, unit = city, time = cycle,
+                    i_unit = 'Seattle', i_time = 8) |> 
+  generate_predictor(At_Large = At_Large, 
                      Pct_general = Pct_general,
                      inc_run = inc_run,
                      inc_win = inc_win,
@@ -101,7 +95,7 @@ only_cali = balanced_df |> filter(state == 'Calif' | city == 'Seattle') |>
 # plotting the weights
 plot_weights(only_cali)
 
-## Part F ##
+
 # Drop Seattle from data
 noseattle_df = balanced_df |> filter(city != 'Seattle')
 
@@ -129,7 +123,7 @@ placebo_weights = lapply(unique(noseattle_df$city),
                              generate_control()
                          }
 )
-# find the coefficients for each placebo group
+# find the coefficients for each placebo group to see how well the synthetic control works
 lapply(1:length(placebo_weights), function(i){
   placebo_weights = placebo_weights[[i]]
   plot_weights(placebo_weights)
