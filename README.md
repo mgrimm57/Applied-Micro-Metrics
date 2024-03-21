@@ -10,4 +10,3 @@ Welcome! In this repository, I apply various causal inference techniques commonl
 * Synthetic Control
 * Regression Discontinuity
 
-
